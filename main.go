@@ -12,20 +12,21 @@ import (
 var urls = []string{"https://www.imdb.com/chart/top/", "https://www.imdb.com/chart/toptv/", "https://www.imdb.com/search/title/?genres=documentary"}
 
 func main() {
-	done := make(chan string)
+	done := make(chan []string)
 
 	for _, url := range urls {
 		go func(u string) {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			fmt.Println("Fetching for: ", u)
-			getBody(ctx, u)
-			done <- u + " done"
+			titles := getBody(ctx, u)
+			done <- titles
 		}(url)
 	}
+
 	for range urls {
-		msg := <-done
-		fmt.Println("Finished: ", msg)
+		titles := <-done
+		fmt.Println("Titles:", titles)
 	}
 }
 
@@ -52,6 +53,6 @@ func getBody(ctx context.Context, url string) []string {
 		fmt.Println("Error reading body:", err)
 		return nil
 	}
-	fmt.Print(body)
+
 	return body
 }
