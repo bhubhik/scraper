@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 var urls = []string{"https://www.imdb.com/chart/top/", "https://www.imdb.com/chart/toptv/", "https://www.imdb.com/search/title/?genres=documentary"}
@@ -13,8 +15,10 @@ func main() {
 
 	for _, url := range urls {
 		go func(u string) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 			fmt.Println("Fetching for: ", u)
-			getBody(u)
+			getBody(ctx, u)
 			done <- u + " done"
 		}(url)
 	}
@@ -24,8 +28,8 @@ func main() {
 	}
 }
 
-func getBody(url string) string {
-	req, err := http.NewRequest("GET", url, nil)
+func getBody(ctx context.Context, url string) string {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		fmt.Println("Error making GET request:", err)
 		return ""
