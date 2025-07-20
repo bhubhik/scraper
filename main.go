@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
+
+	"github.com/bhubhik/scraper/scraper"
 )
 
 var urls = []string{"https://www.imdb.com/chart/top/", "https://www.imdb.com/chart/toptv/", "https://www.imdb.com/search/title/?genres=documentary"}
@@ -28,11 +29,11 @@ func main() {
 	}
 }
 
-func getBody(ctx context.Context, url string) string {
+func getBody(ctx context.Context, url string) []string {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		fmt.Println("Error making GET request:", err)
-		return ""
+		return nil
 	}
 
 	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)")
@@ -41,22 +42,16 @@ func getBody(ctx context.Context, url string) string {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Trouble making request: ", err)
-		return ""
+		return nil
 	}
 
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := scraper.ParseTop10(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading body:", err)
-		return ""
+		return nil
 	}
-	bodyStr := string(body)
-	if len(bodyStr) > 100 {
-		bodyStr = bodyStr[:100]
-	}
-
-	fmt.Printf("Response is: %d\nBody is: %s\n", resp.StatusCode, bodyStr)
-
-	return string(body)
+	fmt.Print(body)
+	return body
 }
